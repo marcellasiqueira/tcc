@@ -1,1 +1,2 @@
-# tcc_testing
+# Prediction-error in proactive autoscaling
+Repository destined for reproduction and analysis for the TCC "Prediction-error in proactive autoscaling." This reproduction is based on the article ["Workload Prediction Using ARIMA Model and Its Impact on Cloud Applications' QoS"](https://ieeexplore.ieee.org/abstract/document/6881647) and on the [available implementation made by Anjie Cheng](https://github.com/AnjieCheng/Wikipedia-Workload-Prediction).
