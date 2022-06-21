@@ -14,38 +14,40 @@ library(yardstick)
 #' @examples 
 #' cores_prediction("data.csv", 100, 1000)
 cores_prediction <- function(raw_data, initial_value, final_value) {
-  cpu_info <- read_csv("cpu_info.csv")
+  cpu_info <- read_csv("data/cpu_info.csv")
   cpu_info <- cpu_info %>% 
     select(InstanceType, vCPUs)
   
   data <- read_csv(raw_data) %>% 
     left_join(cpu_info, by = "InstanceType") %>% 
     group_by(timestamp) %>% 
-    summarise(sum(vCPUs)) %>% 
-    rename(sumCores = `sum(vCPUs)`)
+    mutate(cpuDemand = vCPUs * Average / 100) %>% 
+    summarise(demand = sum(cpuDemand))
   
   data['Predict'] <- 0
   
-  horizon = 4
+  horizon = 12
   for (j in seq(initial_value, final_value)){
     start = j - (initial_value - 1)
     end = j - 1
     prediction = forecast(auto.arima(data[start:end, 2]), h=horizon)
-    data$Predict[j] = prediction$mean[length(prediction$mean)]
+    
+    if(j + (horizon - 1) <=nrow(data)) data$Predict[j + (horizon - 1)] = prediction$mean[length(prediction$mean)]
   }
   
   return(data)
   
 }
 
-data <- cores_prediction("master_data_api_240222_ds-env139-stable.csv", 100, 1440)
+data <- cores_prediction("data/master_data_api_240222_ds-env139-stable.csv", 100, 1440)
 
 # Plot Figures
-plot(data$timestamp, data$sumCores, type="l", xlab="Time", ylab="Cores")
+plot(data$timestamp, data$demand, type="l", xlab="Time", ylab="Cores")
 lines(data$timestamp[100:1440], data$Predict[100:1440], lty=4, col="red")
 
 # R2
-rsq_vec(data$sumCores[100:1440], data$Predict[100:1440])
+rsq_vec(data$demand[100:1440], data$Predict[100:1440])
+rsq_trad_vec(data$demand[100:1440], data$Predict[100:1440])
 
 # Print the accuracy
-print(accuracy(data$sumCores[100:1440], data$Predict[100:1440]))
+print(forecast::accuracy(data$demand[100:1440], data$Predict[100:1440]))
